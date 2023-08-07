@@ -60,7 +60,8 @@ const connectWebSocket = () => {
   };
 
   ws.onmessage = (message) => {
-    console.log(message)
+    // console.log(message)
+    solveMessage(message)
   };
 
   ws.onclose = () => {
@@ -72,6 +73,50 @@ const connectWebSocket = () => {
     console.log('error:', error)
   };
 };
+
+let conversations = []
+let last_reply
+
+async function solveMessage(jsonString) {
+  const data = JSON.parse(jsonString.data);
+  // const data = JSON.parse(jsonObject.data);
+  if (data.type != "FIN_TEXT") {
+    return
+  }
+  conversations.push(data.result)
+
+  // 只保留最近20条对话
+  while (conversations.length > 20) {
+    conversations.shift();
+  }
+  console.log("Question:" + data.result)
+
+  // 要发送的数据
+  let req = {
+    last_reply: last_reply,
+    conversations: conversations
+  };
+
+  //http://localhost:9527/interview/help
+  fetch('http://43.139.233.231:9527/interview/help', {
+    method: 'POST', // or 'PUT'
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(req),  // 将数据转换为 JSON 字符串
+  })
+    .then(response => response.json())  // 解析 JSON 响应
+    .then(resp => {
+      console.log('Answer:', resp.reply);
+      if (resp.reply != "No reply required") {
+        last_reply = resp.reply
+      }
+      // TODO 渲染前端页面
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+}
 
 function App() {
   recorder = new RecorderManager("/src/recorder_manager");
