@@ -17,6 +17,8 @@ import React, { useState, useRef } from 'react';
 
 const uri = "ws://vop.baidu.com/realtime_asr" + '?sn=' + crypto.randomUUID();
 
+const no_reply = "No"
+
 let ws;
 let recorder;
 let conversations = []
@@ -98,6 +100,9 @@ function App() {
     if (data.type != "FIN_TEXT") {
       return
     }
+    if (data.result.length < 8) {
+      return
+    }
     conversations.push(data.result)
 
     setBox1Content(data.result);
@@ -115,6 +120,7 @@ function App() {
     };
 
     //http://localhost:9527/interview/help
+    //http://43.139.233.231:9527/interview/help
     fetch('http://43.139.233.231:9527/interview/help', {
       method: 'POST', // or 'PUT'
       headers: {
@@ -125,7 +131,7 @@ function App() {
       .then(response => response.json())  // 解析 JSON 响应
       .then(resp => {
         console.log('Answer:', resp.reply);
-        if (resp.reply != "No reply required") {
+        if (!resp.reply.toLowerCase().startsWith("no")) {
           last_reply = resp.reply
           setBox2Content(resp.reply);
         }
